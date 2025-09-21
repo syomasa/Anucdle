@@ -198,12 +198,13 @@ export class DomController {
     // Handle main menu logic
     const classicButton = document.getElementById(
       "classic-mode-btn"
-    ) as HTMLButtonElement;
+    ) as HTMLAnchorElement;
     const endlessButton = document.getElementById(
       "endless-mode-btn"
-    ) as HTMLButtonElement;
+    ) as HTMLAnchorElement;
 
     classicButton.addEventListener("click", (ev) => {
+      ev.preventDefault();
       const classicGame = document.getElementById("game-wrapper");
       if (classicGame) {
         classicGame.style.display = "block";
@@ -232,7 +233,13 @@ export class DomController {
       });
     });
 
+    window.addEventListener("popstate", () => {
+      console.log(window.location.pathname);
+    });
+
     endlessButton.addEventListener("click", (ev) => {
+      ev.preventDefault();
+
       const endlessGame = document.getElementById("game-wrapper");
       if (endlessGame) {
         endlessGame.style.display = "block";
