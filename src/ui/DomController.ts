@@ -1,7 +1,45 @@
 import { Game } from "../game/Game";
-
+import MainMenu from "./MainMenu";
+import { FILTERED_WORDS_LIST } from "../utils/constants";
 export class DomController {
-  constructor(private game: Game) {}
+  private menu: MainMenu;
+  private colorblindMode: boolean;
+
+  constructor(private game: Game) {
+    this.menu = new MainMenu(this.game);
+    this.colorblindMode = false;
+    console.log(this.game);
+  }
+
+  private highlightGuess(guess: string, answer: string): string {
+    if (!answer) return guess;
+    let result = "";
+    let i = 0;
+    const lowerGuess = guess.toLowerCase();
+    const lowerAnswer = answer.toLowerCase();
+    // Colorblind-friendly palette: blue for correct, orange for incorrect
+    const correctColor = this.colorblindMode ? "#0072B2" : "green";
+    const wrongColor = this.colorblindMode ? "#E69F00" : "red";
+    while (i < guess.length) {
+      let found = "";
+      // Try to find the longest matching substring starting at i
+      for (let len = guess.length - i; len > 0; len--) {
+        const substr = lowerGuess.substr(i, len);
+        if (substr.length > 0 && lowerAnswer.includes(substr)) {
+          found = guess.substr(i, len);
+          break;
+        }
+      }
+      if (found) {
+        result += `<span style="color:${correctColor};font-weight:bold;">${found}</span>`;
+        i += found.length;
+      } else {
+        result += `<span style="color:${wrongColor};">${guess[i]}</span>`;
+        i++;
+      }
+    }
+    return result;
+  }
 
   bindEvents() {
     const startBtn = document.getElementById("startBtn") as HTMLButtonElement;
@@ -32,44 +70,12 @@ export class DomController {
     let attempts = 0;
     const maxAttempts = 6;
     let gameOver = false;
-    let colorblindMode = false;
 
     // Highlight matching parts of guess in green
 
-    // Highlight matching substrings in green, others in red
-    const highlightGuess = (guess: string, answer: string): string => {
-      if (!answer) return guess;
-      let result = "";
-      let i = 0;
-      const lowerGuess = guess.toLowerCase();
-      const lowerAnswer = answer.toLowerCase();
-      // Colorblind-friendly palette: blue for correct, orange for incorrect
-      const correctColor = colorblindMode ? "#0072B2" : "green";
-      const wrongColor = colorblindMode ? "#E69F00" : "red";
-      while (i < guess.length) {
-        let found = "";
-        // Try to find the longest matching substring starting at i
-        for (let len = guess.length - i; len > 0; len--) {
-          const substr = lowerGuess.substr(i, len);
-          if (substr.length > 0 && lowerAnswer.includes(substr)) {
-            found = guess.substr(i, len);
-            break;
-          }
-        }
-        if (found) {
-          result += `<span style="color:${correctColor};font-weight:bold;">${found}</span>`;
-          i += found.length;
-        } else {
-          result += `<span style="color:${wrongColor};">${guess[i]}</span>`;
-          i++;
-        }
-      }
-      return result;
-    };
-
     colorblindBtn.addEventListener("click", () => {
-      colorblindMode = !colorblindMode;
-      colorblindBtn.textContent = colorblindMode
+      this.colorblindMode = !this.colorblindMode;
+      colorblindBtn.textContent = this.colorblindMode
         ? "Standard Colors"
         : "Colorblind Mode";
       updateGuessesDisplay();
@@ -83,55 +89,7 @@ export class DomController {
           .toLowerCase()
           .replace(/[.,*\-–—_!?:;"'`~()\[\]{}|\\/]/g, " ")
           .split(/\s+/)
-          .filter(
-            (word) =>
-              word &&
-              ![
-                "cover",
-                "by",
-                "ost",
-                "anuc",
-                "the",
-                "a",
-                "and",
-                "for",
-                "on",
-                "in",
-                "of",
-                "to",
-                "with",
-                "at",
-                "from",
-                "as",
-                "is",
-                "has",
-                "been",
-                "due",
-                "you",
-                "my",
-                "me",
-                "we",
-                "are",
-                "how",
-                "did",
-                "can",
-                "like",
-                "up",
-                "little",
-                "years",
-                "attack",
-                "titan",
-                "removed",
-                "copyright",
-                "issues",
-                "anucatittawan",
-                "อนัค",
-                "อนัค",
-                "จงรัก",
-                "ใจรัก",
-                "บุพเพสันนิวาส",
-              ].includes(word)
-          )
+          .filter((word) => word && !FILTERED_WORDS_LIST.includes(word))
           .join(" ");
       }
       const normAnswer = normalize(answer);
@@ -144,7 +102,7 @@ export class DomController {
           } else if (normGuess.length > normAnswer.length) {
             indicator = ' <span style="color:gray;">(longer)</span>';
           }
-          return `<div>${highlightGuess(g, answer)}${indicator}</div>`;
+          return `<div>${this.highlightGuess(g, answer)}${indicator}</div>`;
         })
         .join("");
     };
@@ -166,6 +124,7 @@ export class DomController {
       cover.style.display = "none"; // hide cover
     });
 
+    this.menu.bindEvents(resetGame);
     /* Handle submit when user gives a guess */
     const guessForm = document.getElementById("guess-form") as HTMLFormElement;
     guessForm.addEventListener("submit", (ev) => {
@@ -195,6 +154,7 @@ export class DomController {
       guessInput.value = "";
     });
 
+    /*
     // Handle main menu logic
     const classicButton = document.getElementById(
       "classic-mode-btn"
@@ -268,6 +228,8 @@ export class DomController {
         resetGame();
       });
     });
+
+    */
 
     /*
     // Submit guess button
